@@ -5,4 +5,4 @@ This repository contains various Blender tools to assist in the development of a
 # Warning
 This addon is still in very early development, and is not recommended to be included in your development workflow.
 ## Prerequisites
-This addon requires the [official Asobo Blender exporter](https://github.com/AsoboStudio/glTF-Blender-IO-MSFS)
+This addon requires the [official Asobo Blender addon](https://github.com/AsoboStudio/glTF-Blender-IO-MSFS)
