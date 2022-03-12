@@ -1,0 +1,20 @@
+name: Feature Request
+description: Request a feature to be added to the addon
+labels: [Request]
+body:
+- type: markdown
+  attributes:
+    value: "# msfs-blender-tools Feature Request Form"
+- type: textarea
+  attributes:
+    label: Feature Description
+    description: A concise description of what you'd like to see implemented.
+  validations:
+    required: true
+- type: textarea
+  attributes:
+    label: Anything else?
+    description: |
+      Attatch a `.blend` file, provide pictures, references, or anything that may be relevant to the request.
+  validations:
+    required: false
