@@ -14,7 +14,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from .msfs_primitive import MSFS_Primitive
 
 class Import:
     def __init__(self):
         pass
+
+    def gather_import_decode_primitive(self, gltf_mesh, gltf_primitive, import_settings):
+        MSFS_Primitive.decode_primitive(import_settings, gltf_mesh, gltf_primitive)

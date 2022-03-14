@@ -20,6 +20,8 @@ import pkgutil
 import importlib
 from pathlib import Path
 
+from io_scene_gltf2.io.com.gltf2_io_extensions import Extension
+
 bl_info = {
     "name": "Microsoft Flight Simulator Blender Tools",
     "author": "FlyByWire Simulations",
@@ -45,8 +47,8 @@ def get_version_string():
 
 class FBW_ImporterProperties(bpy.types.PropertyGroup):
     enabled: bpy.props.BoolProperty(
-        name="msfs-blender-tools",
-        description="Enable msfs-blender-tools import extensions",
+        name="MSFS Blender Tools",
+        description="Enable MSFS Blender Tools import extensions",
         default=True,
     )
 
@@ -191,3 +193,10 @@ from .io.msfs_import import Import
 class glTF2ImportUserExtension(Import):
     def __init__(self):
         self.properties = bpy.context.scene.fbw_blender_tools_importer_properties
+        self.extensions = [
+            Extension(
+                name="MSFT_texture_dds",
+                extension={},
+                required=True
+            )
+        ]
