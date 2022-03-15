@@ -6,7 +6,7 @@ from io_scene_gltf2.io.imp.gltf2_io_binary import BinaryData
 from .msfs_binary import MSFS_Binary
 
 
-# TODO: vertex types, OverflowError: Python int too large to convert to C long, mixed up verts, RuntimeWarning: invalid value encountered in true_divide RuntimeWarning: invalid value encountered in multiply large_result = 1.055 * np.power(color, 1.0 / 2.4, where=not_small) - 0.055
+# TODO: vertex types, RuntimeWarning: invalid value encountered in true_divide RuntimeWarning: invalid value encountered in multiply large_result = 1.055 * np.power(color, 1.0 / 2.4, where=not_small) - 0.055
 
 class MSFS_Primitive:
 
@@ -38,7 +38,7 @@ class MSFS_Primitive:
             if gltf_prim.indices is None:
                 return
 
-            print(f"INFO | MSFS Decoder: Decode primitive {gltf_mesh.name}")
+            print(f"INFO | MSFS Decoder: Decoding primitive {gltf_mesh.primitives.index(gltf_prim)} for mesh {gltf_mesh.name}")
 
             extension = gltf_prim.extras[MSFS_Primitive.SerializedName]
 
@@ -68,7 +68,7 @@ class MSFS_Primitive:
             # Flip faces
             new_indices = new_indices[:, ::-1]
             # Flatten
-            new_indices = new_indices.reshape(new_indices.shape)
+            new_indices = new_indices.flatten()
 
             # Set correct data type
             max_index = new_indices.max() # TODO: is this right?
@@ -129,9 +129,16 @@ class MSFS_Primitive:
                 if attr == "NORMAL":
                     # For some reason the normal attribute has a 4th value - we only need three. TODO: figure out what to do with last normal value
                     data = data[:, :-1]
+                    # Since we flipped indices order, flip normals
+                    data = np.negative(data)
                     new_accessor.type = "VEC3"
-                elif attr.startswith("JOINTS_") or attr.startswith("WEIGHTS_"):
+                elif attr.startswith("JOINTS_"):
                     # Joints and weight data needs to have 4 values - built files only have 1, so we pad the data here
+                    data = np.pad(data, (0, 4 - data.shape[1]))
+                    new_accessor.type = "VEC4"
+                elif attr.startswith("WEIGHTS_"):
+                    if extension.get("VertexType") == "BLEND4":
+                        data = np.zeros(data.shape) # TODO: handle BLEND4 properly
                     data = np.pad(data, (0, 4 - data.shape[1]))
                     new_accessor.type = "VEC4"
 
