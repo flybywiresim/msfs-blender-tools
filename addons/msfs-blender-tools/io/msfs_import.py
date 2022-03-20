@@ -22,13 +22,17 @@ class Import:
     def __init__(self):
         pass
 
-    def gather_import_scene_before_hook(self, gltf_scene, blender_scene, import_settings):
-        for skin in import_settings.data.skins: # TODO: handle this better
-            skin.inverse_bind_matrices = None
+    # TODO: add check if optimized mesh
+
+    def gather_import_scene_before_hook(self, gltf_scene, blender_scene, gltf):
+        # Overwrite certain import settings
+        gltf.import_settings['merge_vertices'] = True # Having this set to False gives us some shading issues
+        gltf.import_settings['guess_original_bind_pose'] = False # Having this set to True causes lots of skinning issues
 
     def gather_import_scene_after_animation_hook(self, gltf_scene, blender_scene, import_settings):
-        # Unmute all tracks
+        # Undo some things done during the standard Khronos import process
         for obj in bpy.data.objects:
+            # Unmute all tracks
             if obj.animation_data and obj.animation_data.nla_tracks:
                 for track in obj.animation_data.nla_tracks:
                     track.mute = False
@@ -37,5 +41,5 @@ class Import:
             if obj.type == "MESH":
                 obj.data.use_auto_smooth = False
 
-    def gather_import_decode_primitive(self, gltf_mesh, gltf_primitive, import_settings):
+    def gather_import_decode_primitive(self, gltf_mesh, gltf_primitive, skin_idx, import_settings):
         MSFS_Primitive.decode_primitive(import_settings, gltf_mesh, gltf_primitive)

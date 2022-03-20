@@ -1,3 +1,19 @@
+# msfs-blender-tools
+# Copyright (C) 2022 FlyByWire Simulations
+
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 import numpy as np
 from io_scene_gltf2.io.com.gltf2_io import Accessor, BufferView
 from io_scene_gltf2.io.com.gltf2_io_constants import ComponentType
@@ -6,7 +22,8 @@ from io_scene_gltf2.io.imp.gltf2_io_binary import BinaryData
 from .msfs_binary import MSFS_Binary
 
 
-# TODO: vertex types, RuntimeWarning: invalid value encountered in true_divide RuntimeWarning: invalid value encountered in multiply large_result = 1.055 * np.power(color, 1.0 / 2.4, where=not_small) - 0.055
+# TODO: RuntimeWarning: invalid value encountered in true_divide RuntimeWarning: invalid value encountered in multiply large_result = 1.055 * np.power(color, 1.0 / 2.4, where=not_small) - 0.055
+
 
 class MSFS_Primitive:
 
@@ -38,7 +55,9 @@ class MSFS_Primitive:
             if gltf_prim.indices is None:
                 return
 
-            print(f"INFO | MSFS Decoder: Decoding primitive {gltf_mesh.primitives.index(gltf_prim)} for mesh {gltf_mesh.name}")
+            print(
+                f"INFO | MSFS Decoder: Decoding primitive {gltf_mesh.primitives.index(gltf_prim)} for mesh {gltf_mesh.name}"
+            )
 
             extension = gltf_prim.extras[MSFS_Primitive.SerializedName]
 
@@ -49,7 +68,7 @@ class MSFS_Primitive:
             primitive_count = 0
             start_index = 0
 
-            # While it would be more efficient to do `extension.get("PROPERTY", 0)`, unfortunately there are cases where the key is present but with a null value
+            # While it would be more efficient to do `extension.get(PROPERTY, 0)`, unfortunately there are cases where the key is present but with a null value
             if extension.get("BaseVertexIndex"):
                 base_vertex_index = extension.get("BaseVertexIndex")
             if extension.get("PrimitiveCount"):
@@ -57,10 +76,14 @@ class MSFS_Primitive:
             if extension.get("StartIndex"):
                 start_index = extension.get("StartIndex")
 
-            new_indices = np.array([
-                x + base_vertex_index
-                for x in indices[start_index : (start_index + (primitive_count * 3))]
-            ])
+            new_indices = np.array(
+                [
+                    x + base_vertex_index
+                    for x in indices[
+                        start_index : (start_index + (primitive_count * 3))
+                    ]
+                ]
+            )
 
             # We have to flip face vertex order. For example: a face with indices [1, 2, 3] will become [3, 2, 1]. We need to do this to ensure the normals are facing the correct way
             # First, Group indices into faces (groups of 3)
@@ -71,7 +94,7 @@ class MSFS_Primitive:
             new_indices = new_indices.flatten()
 
             # Set correct data type
-            max_index = new_indices.max() # TODO: is this right?
+            max_index = new_indices.max()
             if max_index < 65535:
                 component_type = ComponentType.UnsignedShort
                 new_indices = new_indices.astype(np.uint16, copy=False)
@@ -79,7 +102,9 @@ class MSFS_Primitive:
                 component_type = ComponentType.UnsignedInt
                 new_indices = new_indices.astype(np.uint32, copy=False)
             else:
-                raise RuntimeError(f"Mesh {gltf_mesh.name} contains too many vertices") # Not sure if this will ever happen, but check just in case
+                raise RuntimeError(
+                    f"Mesh {gltf_mesh.name} contains too many vertices"
+                )  # Not sure if this will ever happen, but check just in case
 
             # Choose a buffer index which does not yet exist, skipping over existing glTF buffers yet to be loaded
             # and buffers which were generated and did not exist in the initial glTF file.
@@ -126,6 +151,7 @@ class MSFS_Primitive:
                 data = MSFS_Binary.decode_accessor(gltf, gltf_prim.attributes[attr])
 
                 # Handle certain attributes
+                # TODO: color, tangent, texcoord, normal?
                 if attr == "NORMAL":
                     # For some reason the normal attribute has a 4th value - we only need three. TODO: figure out what to do with last normal value
                     data = data[:, :-1]
@@ -137,10 +163,10 @@ class MSFS_Primitive:
                     data = np.pad(data, (0, 4 - data.shape[1]))
                     new_accessor.type = "VEC4"
                 elif attr.startswith("WEIGHTS_"):
-                    if extension.get("VertexType") == "BLEND4":
-                        data = np.zeros(data.shape) # TODO: handle BLEND4 properly
                     data = np.pad(data, (0, 4 - data.shape[1]))
                     new_accessor.type = "VEC4"
+                    new_accessor.normalized = None
+                    new_accessor.component_type = 5126
 
                 data = data.tobytes()
 
