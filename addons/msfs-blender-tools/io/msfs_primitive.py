@@ -158,6 +158,12 @@ class MSFS_Primitive:
                     # Since we flipped indices order, flip normals
                     data = np.negative(data)
                     new_accessor.type = "VEC3"
+                elif attr.startswith("COLOR_"):
+                    data = np.zeros(data.shape) # Disregard all previous values - MSFS always sets these values to 15360
+                    data.fill(15360)
+                    new_accessor.component_type = ComponentType.UnsignedShort
+                elif attr.startswith("TEXCOORD_"):
+                    new_accessor.component_type = ComponentType.Float
                 elif attr.startswith("JOINTS_"):
                     # Joints and weight data needs to have 4 values - built files only have 1, so we pad the data here
                     data = np.pad(data, (0, 4 - data.shape[1]))
@@ -166,9 +172,9 @@ class MSFS_Primitive:
                     data = np.pad(data, (0, 4 - data.shape[1]))
                     new_accessor.type = "VEC4"
                     new_accessor.normalized = None
-                    new_accessor.component_type = 5126
+                    new_accessor.component_type = ComponentType.Float
 
-                data = data.tobytes()
+                data = data.astype(ComponentType.to_numpy_dtype(new_accessor.component_type)).tobytes()
 
                 # Generate new buffer holding the new attribute
                 buffer_idx = base_buffer_idx + 1 + attr_idx

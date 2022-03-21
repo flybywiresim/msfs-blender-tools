@@ -26,7 +26,7 @@ def skin_into_bind_pose(gltf, skin_idx, vert_joints, vert_weights, locs, vert_no
     # Skinning equation: vert' = sum_(j,w) w * joint_mat[j] * vert
     # where the sum is over all (joint,weight) pairs.
 
-    if gltf.data.asset.extensions.get("ASOBO_asset_optimized"): # PATCH - Asobo optimized assets already apply skinning trans to verts
+    if gltf.data.asset.extensions and gltf.data.asset.extensions.get("ASOBO_asset_optimized"): # PATCH - Asobo optimized assets already apply skinning trans to verts
         return
 
     # Calculate joint matrices
