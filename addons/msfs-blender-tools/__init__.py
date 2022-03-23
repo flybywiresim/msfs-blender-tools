@@ -19,6 +19,7 @@ import inspect
 import pkgutil
 import importlib
 from pathlib import Path
+from .util.install_requirements import FBW_OT_install_requirements
 
 from io_scene_gltf2.io.com.gltf2_io_extensions import Extension
 
@@ -52,6 +53,21 @@ class FBW_ImporterProperties(bpy.types.PropertyGroup):
         default=True,
     )
 
+class FBW_AddonPreferences(bpy.types.AddonPreferences):
+    bl_idname = __package__
+
+    fs_base_dir: bpy.props.StringProperty(
+        name='Folder path',
+        description='Absolute path to the fs-base folder in your Flight Simulator installation',
+        default='',
+        subtype='DIR_PATH'
+    )
+
+    def draw(self, context):
+        layout = self.layout
+        layout.prop(self, 'fs_base_dir', text="fs-base directory")
+        if not FBW_OT_install_requirements.requirements_installed():
+            layout.operator(FBW_OT_install_requirements.bl_idname, icon="CONSOLE")
 
 class GLTF_PT_FBWImporterExtensionPanel(bpy.types.Panel):
     bl_space_type = "FILE_BROWSER"
@@ -97,7 +113,7 @@ def modules():
 
 
 classes = []
-extension_classes = [FBW_ImporterProperties]
+extension_classes = [FBW_ImporterProperties, FBW_AddonPreferences]
 extension_panels = [GLTF_PT_FBWImporterExtensionPanel]
 
 # Refresh the list of classes

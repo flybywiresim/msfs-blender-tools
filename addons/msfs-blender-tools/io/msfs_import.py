@@ -17,6 +17,7 @@
 import bpy
 
 from .msfs_primitive import MSFS_Primitive
+from .msfs_texture import MSFS_Texture
 
 class Import:
     def __init__(self):
@@ -43,3 +44,10 @@ class Import:
 
     def gather_import_decode_primitive(self, gltf_mesh, gltf_primitive, skin_idx, import_settings):
         MSFS_Primitive.decode_primitive(import_settings, gltf_mesh, gltf_primitive)
+
+    def gather_import_texture_before_hook(self, gltf_texture, mh, tex_info, location, label, color_socket, alpha_socket, is_data, import_settings):
+        MSFS_Texture.convert_texture(import_settings, gltf_texture)
+
+    def gather_import_image_after_hook(self, gltf_img, blender_image, import_settings):
+        MSFS_Texture.rename_image(import_settings, gltf_img, blender_image)
+        MSFS_Texture.convert_normal_map(import_settings, gltf_img, blender_image)
