@@ -24,6 +24,7 @@ from io import BytesIO
 
 from io_scene_gltf2.io.com import gltf2_io_debug
 
+# TODO: maybe convert before material import runs in order to get texture values to set properly, normals issue, other material import issues, list indices must be integers or slices, not NoneType
 
 class MSFS_Texture:
 
@@ -54,6 +55,7 @@ class MSFS_Texture:
             )
             pixel_data = pixels.reshape((-1, 1)).transpose()[0]
             blender_image.pixels.foreach_set(pixel_data)
+            blender_image.update()
 
     @staticmethod
     def convert_texture(gltf, gltf_texture):
@@ -139,7 +141,7 @@ class MSFS_Texture:
             # The Khronos importer sets packed image names with placeholder values. We want to make sure we respect the original names
             if not hasattr(gltf, "packed_image_names"):
                 gltf.packed_image_names = {}
-            gltf.packed_image_names[source] = source.uri
+            gltf.packed_image_names[source] = source.uri.split('.')[0] # Remove extensions from filename
 
             source.uri = data
             gltf_texture.extensions = None
