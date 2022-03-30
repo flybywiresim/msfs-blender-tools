@@ -58,91 +58,105 @@ class MSFS_Texture:
             blender_image.update()
 
     @staticmethod
-    def convert_texture(gltf, gltf_texture):
+    def convert_textures(gltf):
         """
+        Convert all textures from DDS to PNG before scene creation.
         Use PIL to open the DDS image, and embed the image data into the glTF file. That way we don't need to write anything to disk (slow)
         """
         from PIL import Image
 
-        if (
-            gltf_texture.extensions is not None
-            and MSFS_Texture.SerializedName in gltf_texture.extensions
-        ):
-            addon_settings = bpy.context.preferences.addons[
-                os.path.splitext(__package__)[0]
-            ].preferences
+        for gltf_texture in gltf.data.textures:
+            if (
+                gltf_texture.extensions is not None
+                and MSFS_Texture.SerializedName in gltf_texture.extensions
+            ):
+                addon_settings = bpy.context.preferences.addons[
+                    os.path.splitext(__package__)[0]
+                ].preferences
 
-            source = gltf.data.images[
-                gltf_texture.extensions[MSFS_Texture.SerializedName].get("source")
-            ]
+                source = gltf.data.images[
+                    gltf_texture.extensions[MSFS_Texture.SerializedName].get("source") # TODO: cases where referencing image already converted
+                ]
 
-            # Assume we are in a proper structured project
-            textures_folder = os.path.join(
-                os.path.dirname(os.path.dirname(gltf.import_settings["filepath"])),
-                "TEXTURE",
-            )
+                if source.uri.startswith("data:application/octet-stream;base64,"):
+                    gltf2_io_debug.print_console("INFO", f"Texture {source.uri} already converted, skipping")
+                    gltf_texture.extensions = None
+                    gltf_texture.source = gltf.data.images.index(source)
+                    continue
 
-            texture_path = os.path.join(textures_folder, source.uri)
-            if os.path.exists(texture_path):
-                pass
-            else:
-                # Use fallbacks in the texture.cfg
-                texture_config_path = os.path.join(textures_folder, "texture.cfg")
-                if not os.path.exists(texture_config_path):
-                    return  # TODO: throw error?
+                gltf2_io_debug.print_console("INFO", f"Converting texture {source.uri}")
 
-                parser = configparser.ConfigParser()
-                parser.read(texture_config_path)
+                # Assume we are in a proper structured project
+                textures_folder = os.path.join(
+                    os.path.dirname(os.path.dirname(gltf.import_settings["filepath"])),
+                    "TEXTURE",
+                )
 
-                if "fltsim" not in parser:
-                    return
-
-                fltsim = parser["fltsim"]
-                for fallback in list(fltsim):
-                    fallback_path = os.path.join(
-                        addon_settings.fs_base_dir or "",
-                        fltsim[fallback].split(".")[-1],
-                    )
-
-                    if not os.path.exists(fallback_path):
+                texture_path = os.path.join(textures_folder, source.uri)
+                if os.path.exists(texture_path):
+                    pass
+                else:
+                    # Use fallbacks in the texture.cfg
+                    texture_config_path = os.path.join(textures_folder, "texture.cfg")
+                    if not os.path.exists(texture_config_path):
+                        gltf2_io_debug.print_console("WARNING", f"Texture {source.uri} failed to convert")
                         continue
 
-                    fallback_texture_path = os.path.join(fallback_path, source.uri)
-                    if os.path.exists(fallback_texture_path):
-                        texture_path = fallback_texture_path
-                        break
+                    parser = configparser.ConfigParser()
+                    parser.read(texture_config_path)
 
-                if not os.path.exists(texture_path):
-                    return
+                    if "fltsim" not in parser:
+                        gltf2_io_debug.print_console("WARNING", f"Texture {source.uri} failed to convert")
+                        continue
 
-            # Now we read the texture
-            image = Image.open(texture_path)  # TODO: normals
+                    fltsim = parser["fltsim"]
+                    for fallback in list(fltsim):
+                        fallback_path = os.path.join(
+                            addon_settings.fs_base_dir or "",
+                            fltsim[fallback].split(".")[-1],
+                        )
 
-            # Check JSON
-            image_json = texture_path + ".json"
-            if os.path.exists(image_json):
-                with open(image_json, "r") as f:
-                    data = json.loads(f.read())
+                        if not os.path.exists(fallback_path):
+                            gltf2_io_debug.print_console("WARNING", f"Texture {source.uri} failed to convert")
+                            continue
 
-                if "FL_BITMAP_TANGENT_DXT5N" in data.get("Flags", []):
-                    # During the build process, many changes are applied to the normal maps. We want to undo that
-                    if not hasattr(gltf, "normals_needing_conversion"):
-                        gltf.normals_needing_conversion = []
-                    gltf.normals_needing_conversion.append(source)
+                        fallback_texture_path = os.path.join(fallback_path, source.uri)
+                        if os.path.exists(fallback_texture_path):
+                            texture_path = fallback_texture_path
+                            break
 
-            # Create buffer view
-            buffer = BytesIO()
-            image.save(buffer, format="PNG")
+                    if not os.path.exists(texture_path):
+                        gltf2_io_debug.print_console("WARNING", f"Texture {source.uri} failed to convert")
+                        continue
 
-            data = "data:application/octet-stream;base64," + base64.b64encode(
-                buffer.getvalue()
-            ).decode("ascii")
+                # Now we read the texture
+                image = Image.open(texture_path)
 
-            # The Khronos importer sets packed image names with placeholder values. We want to make sure we respect the original names
-            if not hasattr(gltf, "packed_image_names"):
-                gltf.packed_image_names = {}
-            gltf.packed_image_names[source] = source.uri.split('.')[0] # Remove extensions from filename
+                # Check JSON
+                image_json = texture_path + ".json"
+                if os.path.exists(image_json):
+                    with open(image_json, "r") as f:
+                        data = json.loads(f.read())
 
-            source.uri = data
-            gltf_texture.extensions = None
-            gltf_texture.source = gltf.data.images.index(source)
+                    if "FL_BITMAP_TANGENT_DXT5N" in data.get("Flags", []):
+                        # During the build process, many changes are applied to the normal maps. We want to undo that
+                        if not hasattr(gltf, "normals_needing_conversion"):
+                            gltf.normals_needing_conversion = []
+                        gltf.normals_needing_conversion.append(source)
+
+                # Create buffer view
+                buffer = BytesIO()
+                image.save(buffer, format="PNG") # TODO: this performance is so awful
+
+                data = "data:application/octet-stream;base64," + base64.b64encode(
+                    buffer.getvalue()
+                ).decode("ascii")
+
+                # The Khronos importer sets packed image names with placeholder values. We want to make sure we respect the original names
+                if not hasattr(gltf, "packed_image_names"):
+                    gltf.packed_image_names = {}
+                gltf.packed_image_names[source] = source.uri.split('.')[0] # Remove extensions from filename
+
+                source.uri = data
+                gltf_texture.extensions = None
+                gltf_texture.source = gltf.data.images.index(source)

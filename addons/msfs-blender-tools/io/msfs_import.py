@@ -29,6 +29,7 @@ class Import:
         # Overwrite certain import settings
         gltf.import_settings['merge_vertices'] = True # Having this set to False gives us some shading issues
         gltf.import_settings['guess_original_bind_pose'] = False # Having this set to True causes lots of skinning issues
+        MSFS_Texture.convert_textures(gltf)
 
     def gather_import_scene_after_animation_hook(self, gltf_scene, blender_scene, import_settings):
         # Undo some things done during the standard Khronos import process
@@ -44,9 +45,6 @@ class Import:
 
     def gather_import_decode_primitive(self, gltf_mesh, gltf_primitive, skin_idx, import_settings):
         MSFS_Primitive.decode_primitive(import_settings, gltf_mesh, gltf_primitive)
-
-    def gather_import_texture_before_hook(self, gltf_texture, mh, tex_info, location, label, color_socket, alpha_socket, is_data, import_settings):
-        MSFS_Texture.convert_texture(import_settings, gltf_texture)
 
     def gather_import_image_after_hook(self, gltf_img, blender_image, import_settings):
         MSFS_Texture.rename_image(import_settings, gltf_img, blender_image)
