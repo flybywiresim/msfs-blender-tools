@@ -79,7 +79,7 @@ class MSFS_Texture:
                 ]
 
                 if source.uri.startswith("data:application/octet-stream;base64,"):
-                    gltf2_io_debug.print_console("INFO", f"Texture {source.uri} already converted, skipping")
+                    gltf2_io_debug.print_console("INFO", f"Texture already converted, skipping")
                     gltf_texture.extensions = None
                     gltf_texture.source = gltf.data.images.index(source)
                     continue
