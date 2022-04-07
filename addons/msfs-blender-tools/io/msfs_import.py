@@ -41,27 +41,19 @@ class Import:
         MSFS_Texture.convert_textures(gltf)
 
     @on_built_asset
-    def gather_import_scene_after_animation_hook(self, gltf_scene, blender_scene, import_settings):
-        # Undo some things done during the standard Khronos import process
-        for obj in bpy.data.objects:
-            # Unmute all tracks
-            if obj.animation_data and obj.animation_data.nla_tracks:
-                for track in obj.animation_data.nla_tracks:
-                    track.mute = False
-        
-            # Remove auto smooth
-            if obj.type == "MESH":
-                obj.data.use_auto_smooth = False
-
-    @on_built_asset
     def gather_import_decode_primitive(self, gltf_mesh, gltf_primitive, skin_idx, import_settings):
         MSFS_Primitive.decode_primitive(import_settings, gltf_mesh, gltf_primitive)
 
     @on_built_asset
     def gather_import_mesh_options(self, mesh_options, gltf_mesh, skin_idx, import_settings):
         mesh_options.skin_into_bind_pose = False # The MSFS build process already calculates bind pose on the vertex locations, so if we do it again it will cause many visual errors
+        mesh_options.use_auto_smooth = False # For some reason using auto smooth on built files causes shading issues, so we disable it
 
     @on_built_asset
     def gather_import_image_after_hook(self, gltf_img, blender_image, import_settings):
         MSFS_Texture.rename_image(import_settings, gltf_img, blender_image)
         MSFS_Texture.convert_normal_map(import_settings, gltf_img, blender_image)
+
+    @on_built_asset
+    def gather_import_animations(self, gltf_animations, animation_options, import_settings):
+        animation_options.restore_first_anim = False # We don't want to restore the first animation as it causes issues at export
