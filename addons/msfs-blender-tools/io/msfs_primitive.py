@@ -167,12 +167,12 @@ class MSFS_Primitive:
                 elif attr.startswith("JOINTS_"):
                     # Joint data needs to have 4 values - BLEND1 primitives only have 1
                     if extension.get("VertexType") == "BLEND1":
-                        data = np.pad(data, (0, 3))[:-3]
+                        data = np.pad(data, (0, 4 - data.shape[1]))
                     new_accessor.type = "VEC4"
                 elif attr.startswith("WEIGHTS_"):
                     # Weight data needs to have 4 values - BLEND1 primitives only have 1
                     if extension.get("VertexType") == "BLEND1":
-                        data = np.pad(data, (0, 3))[:-3]
+                        data = np.pad(data, (0, 4 - data.shape[1]))
                     new_accessor.type = "VEC4"
                     new_accessor.normalized = None
                     new_accessor.component_type = ComponentType.Float
