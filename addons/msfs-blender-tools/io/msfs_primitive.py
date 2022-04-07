@@ -165,11 +165,14 @@ class MSFS_Primitive:
                 elif attr.startswith("TEXCOORD_"):
                     new_accessor.component_type = ComponentType.Float
                 elif attr.startswith("JOINTS_"):
-                    # Joints and weight data needs to have 4 values - built files only have 1, so we pad the data here
-                    data = np.pad(data, (0, 4 - data.shape[1]))
+                    # Joint data needs to have 4 values - BLEND1 primitives only have 1
+                    if extension.get("VertexType") == "BLEND1":
+                        data = np.pad(data, (0, 3))[:-3]
                     new_accessor.type = "VEC4"
                 elif attr.startswith("WEIGHTS_"):
-                    data = np.pad(data, (0, 4 - data.shape[1]))
+                    # Weight data needs to have 4 values - BLEND1 primitives only have 1
+                    if extension.get("VertexType") == "BLEND1":
+                        data = np.pad(data, (0, 3))[:-3]
                     new_accessor.type = "VEC4"
                     new_accessor.normalized = None
                     new_accessor.component_type = ComponentType.Float

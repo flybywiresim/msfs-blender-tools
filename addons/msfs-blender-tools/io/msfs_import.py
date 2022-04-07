@@ -46,6 +46,9 @@ class Import:
     def gather_import_decode_primitive(self, gltf_mesh, gltf_primitive, skin_idx, import_settings):
         MSFS_Primitive.decode_primitive(import_settings, gltf_mesh, gltf_primitive)
 
+    def gather_import_mesh_options(self, mesh_options, gltf_mesh, skin_idx, import_settings):
+        mesh_options.skin_into_bind_pose = False # The MSFS build process already calculates bind pose on the vertex locations, so if we do it again it will cause many visual errors
+
     def gather_import_image_after_hook(self, gltf_img, blender_image, import_settings):
         MSFS_Texture.rename_image(import_settings, gltf_img, blender_image)
         MSFS_Texture.convert_normal_map(import_settings, gltf_img, blender_image)
