@@ -38,6 +38,7 @@ class Import:
         # Overwrite certain import settings
         gltf.import_settings['merge_vertices'] = True # Having this set to False gives us some shading issues
         gltf.import_settings['guess_original_bind_pose'] = False # Having this set to True causes lots of skinning issues
+        gltf.import_settings['bone_heuristic'] = 'BLENDER' # Setting this to BLENDER yields the best results for reimporting back into the sim. From limited testing, this resolves wingflex and winglets being flipped
         MSFS_Texture.convert_textures(gltf)
 
     @on_built_asset
